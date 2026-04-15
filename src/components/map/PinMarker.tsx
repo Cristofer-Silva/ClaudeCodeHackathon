@@ -1,6 +1,6 @@
 'use client';
 
-import { Marker } from 'react-map-gl/mapbox';
+import { AdvancedMarker } from '@vis.gl/react-google-maps';
 import type { Pin } from '@/types';
 import { CATEGORIES } from '@/types';
 
@@ -16,14 +16,9 @@ export default function PinMarker({ pin, onClick, isNew }: PinMarkerProps) {
   const emoji = category?.emoji || '\u{2728}';
 
   return (
-    <Marker
-      longitude={pin.longitude}
-      latitude={pin.latitude}
-      anchor="bottom"
-      onClick={(e) => {
-        e.originalEvent.stopPropagation();
-        onClick(pin);
-      }}
+    <AdvancedMarker
+      position={{ lat: pin.latitude, lng: pin.longitude }}
+      onClick={() => onClick(pin)}
     >
       <div className={`relative cursor-pointer ${isNew ? 'animate-pin-drop' : ''}`}>
         {/* Ripple effect for new pins */}
@@ -63,6 +58,6 @@ export default function PinMarker({ pin, onClick, isNew }: PinMarkerProps) {
           </div>
         )}
       </div>
-    </Marker>
+    </AdvancedMarker>
   );
 }

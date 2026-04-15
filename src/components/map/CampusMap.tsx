@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import Map, { type MapRef, type MapMouseEvent } from 'react-map-gl/mapbox';
+import { useState, useCallback, useEffect } from 'react';
+import { Map, useMap, type MapMouseEvent } from '@vis.gl/react-google-maps';
 import PinMarker from './PinMarker';
 import MapControls from './MapControls';
 import CreatePinSheet from '@/components/pins/CreatePinSheet';
@@ -12,21 +12,15 @@ import { useRealtimePins } from '@/hooks/useRealtimePins';
 import { useLocation } from '@/hooks/useLocation';
 import { usePinActions } from '@/hooks/usePinActions';
 import { useAuth } from '@/hooks/useAuth';
-import { DEFAULT_CENTER, MAP_STYLE } from '@/lib/constants';
+import { DEFAULT_CENTER, GOOGLE_MAPS_DARK_STYLE } from '@/lib/constants';
 import type { Pin, Category } from '@/types';
 
 export default function CampusMap() {
-  const mapRef = useRef<MapRef>(null);
+  const map = useMap();
   const { pins, loading } = useRealtimePins();
   const { latitude, longitude, requestLocation } = useLocation();
   const { createPin, joinPin, leavePin, deletePin } = usePinActions();
   const { user } = useAuth();
-
-  const [viewState, setViewState] = useState({
-    latitude: DEFAULT_CENTER.latitude,
-    longitude: DEFAULT_CENTER.longitude,
-    zoom: DEFAULT_CENTER.zoom,
-  });
 
   const [isCreating, setIsCreating] = useState(false);
   const [createLocation, setCreateLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -41,7 +35,6 @@ export default function CampusMap() {
       const latestPin = pins[0];
       if (latestPin && !newPinIds.has(latestPin.id)) {
         setNewPinIds(prev => new Set(prev).add(latestPin.id));
-        // Remove "new" status after animation
         setTimeout(() => {
           setNewPinIds(prev => {
             const next = new Set(prev);
@@ -59,8 +52,11 @@ export default function CampusMap() {
   }, []);
 
   const handleMapClick = useCallback((e: MapMouseEvent) => {
-    if (isCreating) {
-      setCreateLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+    if (isCreating && e.detail.latLng) {
+      setCreateLocation({
+        lat: e.detail.latLng.lat,
+        lng: e.detail.latLng.lng,
+      });
     } else {
       setSelectedPin(null);
     }
@@ -68,20 +64,19 @@ export default function CampusMap() {
 
   const handleLocateMe = useCallback(() => {
     requestLocation();
-    mapRef.current?.flyTo({
-      center: [longitude, latitude],
-      zoom: 16,
-      duration: 1000,
-    });
-  }, [longitude, latitude, requestLocation]);
+    if (map) {
+      map.panTo({ lat: latitude, lng: longitude });
+      map.setZoom(16);
+    }
+  }, [longitude, latitude, requestLocation, map]);
 
   const handleZoomIn = useCallback(() => {
-    mapRef.current?.zoomIn({ duration: 300 });
-  }, []);
+    if (map) map.setZoom((map.getZoom() || 15) + 1);
+  }, [map]);
 
   const handleZoomOut = useCallback(() => {
-    mapRef.current?.zoomOut({ duration: 300 });
-  }, []);
+    if (map) map.setZoom((map.getZoom() || 15) - 1);
+  }, [map]);
 
   const handleCreatePin = useCallback(async (data: Parameters<typeof createPin>[0]) => {
     try {
@@ -130,16 +125,18 @@ export default function CampusMap() {
   return (
     <div className="relative w-full h-full">
       <Map
-        ref={mapRef}
-        {...viewState}
-        onMove={(evt) => setViewState(evt.viewState)}
+        defaultCenter={{ lat: DEFAULT_CENTER.latitude, lng: DEFAULT_CENTER.longitude }}
+        defaultZoom={DEFAULT_CENTER.zoom}
+        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID || undefined}
+        styles={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID ? undefined : GOOGLE_MAPS_DARK_STYLE}
         onClick={handleMapClick}
-        mapStyle={MAP_STYLE}
-        mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         style={{ width: '100%', height: '100%' }}
-        cursor={isCreating ? 'crosshair' : 'grab'}
+        draggableCursor={isCreating ? 'crosshair' : 'grab'}
         maxZoom={20}
         minZoom={10}
+        disableDefaultUI={true}
+        clickableIcons={false}
+        gestureHandling="greedy"
       >
         {filteredPins.map(pin => (
           <PinMarker

@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { APIProvider } from '@vis.gl/react-google-maps';
 
 const CampusMap = dynamic(() => import('@/components/map/CampusMap'), {
   ssr: false,
@@ -16,8 +17,10 @@ const CampusMap = dynamic(() => import('@/components/map/CampusMap'), {
 
 export default function MapPage() {
   return (
-    <div className="w-full h-screen">
-      <CampusMap />
-    </div>
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+      <div className="w-full h-screen">
+        <CampusMap />
+      </div>
+    </APIProvider>
   );
 }

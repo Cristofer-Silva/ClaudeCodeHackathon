@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "mapbox-gl/dist/mapbox-gl.css";
 
 @theme inline {
   --color-bg-primary: #0F0F0F;
@@ -137,25 +136,8 @@ body {
   border-radius: 999px;
 }
 
-/* Mapbox overrides */
-.mapboxgl-ctrl-attrib {
+/* Google Maps overrides */
+.gm-style-cc,
+.gmnoprint:not(.gm-bundled-control) {
   display: none !important;
-}
-
-.mapboxgl-popup-content {
-  background: var(--color-bg-card) !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: 16px !important;
-  padding: 0 !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-}
-
-.mapboxgl-popup-tip {
-  border-top-color: var(--color-bg-card) !important;
-}
-
-.mapboxgl-popup-close-button {
-  color: var(--color-text-secondary) !important;
-  font-size: 18px !important;
-  padding: 4px 8px !important;
 }
